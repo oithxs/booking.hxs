@@ -555,16 +555,4 @@ find $BACKUP_DIR -name "reservations_*.json" -mtime +7 -delete
 ```
 
 
-## まとめ
-
-systemdサービスとして設定することで：
-
-✅ **自動起動** - サーバー起動時に自動的にBotが起動
-✅ **自動再起動** - クラッシュしても自動的に再起動
-✅ **ログ管理** - journalctlで簡単にログ確認
-✅ **サービス管理** - systemctlで簡単に管理
-✅ **本番運用** - 安定した運用が可能
-
----
-
 **関連ドキュメント**: [README](../README.md) | [起動ガイド](SETUP.md) | [コマンド](COMMANDS.md) | [データ管理](DATA_MANAGEMENT.md) | [開発](DEVELOPMENT.md)

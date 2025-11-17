@@ -10,7 +10,7 @@
 4. [シンプルコマンドのテンプレート](#シンプルコマンドのテンプレート)
 5. [コードフローの統一ルール](#コードフローの統一ルール)
 
----
+
 
 ## 基本テンプレート
 
@@ -23,13 +23,10 @@ internal/commands/
 └── response_helpers.go # 共通レスポンス関数
 ```
 
----
 
 ## データ変更コマンドのテンプレート
 
 予約の作成・編集・削除など、データを変更するコマンドのテンプレートです。
-
-### ファイル: `internal/commands/cmd_xxx.go`
 
 ```go
 package commands
@@ -114,13 +111,10 @@ func handleXxx(s *discordgo.Session, i *discordgo.InteractionCreate, store *stor
 
 `cmd_cancel.go` を参照してください。
 
----
 
 ## データ表示コマンドのテンプレート
 
 予約一覧表示など、データを表示するだけのコマンドのテンプレートです。
-
-### ファイル: `internal/commands/cmd_xxx_list.go`
 
 ```go
 package commands
@@ -249,13 +243,11 @@ func handleXxxList(s *discordgo.Session, i *discordgo.InteractionCreate, store *
 
 `cmd_list.go` を参照してください。
 
----
+
 
 ## シンプルコマンドのテンプレート
 
 フィードバック送信など、ストレージを使用しないシンプルなコマンドのテンプレートです。
-
-### ファイル: `internal/commands/cmd_xxx.go`
 
 ```go
 package commands
@@ -305,7 +297,6 @@ func handleXxx(s *discordgo.Session, i *discordgo.InteractionCreate, logger *log
 
 `cmd_feedback.go` を参照してください。
 
----
 
 ## コードフローの統一ルール
 
@@ -432,7 +423,6 @@ respondEmbedWithFooter(s, i, "成功", "", fields, 0x57F287, "footer", true)
 sendChannelEmbed(s, channelID, "通知", "", fields, 0x57F287, "footer")
 ```
 
----
 
 ## 新しいコマンドの追加手順
 
@@ -480,7 +470,6 @@ make build  # ビルド
 make run    # 実行
 ```
 
----
 
 ## 参考リンク
 
