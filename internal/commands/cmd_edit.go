@@ -13,19 +13,20 @@ import (
 
 // handleEdit は予約編集コマンドを処理する
 func handleEdit(s *discordgo.Session, i *discordgo.InteractionCreate, store *storage.Storage, logger *logging.Logger, allowedChannelID string, isDM bool) {
+	// 1. オプション取得
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
 		optionMap[opt.Name] = opt
 	}
 
-	// ユーザー情報を取得
+	// 2. ユーザー情報取得
 	userID, username := getUserInfo(i, isDM)
 
-	// 予約IDを取得
+	// 3. パラメータ抽出 - 予約IDを取得
 	reservationID := optionMap["reservation_id"].StringValue()
 
-	// 予約を取得
+	// 4. ビジネスロジック - 予約を取得
 	reservation, err := store.GetReservation(reservationID)
 	if err != nil {
 		respondError(s, i, "指定された予約が見つかりません。")
@@ -178,24 +179,7 @@ func handleEdit(s *discordgo.Session, i *discordgo.InteractionCreate, store *sto
 			},
 		}
 
-		embed := &discordgo.MessageEmbed{
-			Title:       "🔴 予約を編集できませんでした",
-			Description: "指定された時間は既に予約されています。",
-			Fields:      fields,
-			Color:       0xED4245, // Discord Red
-			Timestamp:   time.Now().Format(time.RFC3339),
-			Footer: &discordgo.MessageEmbedFooter{
-				Text: "部室予約システム  |  edit",
-			},
-		}
-
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Embeds: []*discordgo.MessageEmbed{embed},
-				Flags:  discordgo.MessageFlagsEphemeral,
-			},
-		})
+		respondEmbedWithFooter(s, i, "🔴 予約を編集できませんでした", "指定された時間は既に予約されています。", fields, 0xED4245, "部室予約システム  |  edit", true)
 		return
 	}
 
@@ -246,6 +230,7 @@ func handleEdit(s *discordgo.Session, i *discordgo.InteractionCreate, store *sto
 		if newCommentDisplay == "" {
 			newCommentDisplay = "（なし）"
 		}
+
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name:   "💬 コメント",
 			Value:  fmt.Sprintf("%s → %s", oldCommentDisplay, newCommentDisplay),
@@ -253,37 +238,18 @@ func handleEdit(s *discordgo.Session, i *discordgo.InteractionCreate, store *sto
 		})
 	}
 
-	respondEmbedWithFields(s, i, "🟡 予約を編集しました", "", fields, 0xFEE75C, true)
+	// 5. レスポンス
+	respondEmbedWithFooter(s, i, "🟡 予約を編集しました", "", fields, 0xFEE75C, "部室予約システム  |  edit", true)
 
-	// 公開通知(変更がある場合)
+	// 6. チャンネル通知(変更がある場合) - 予約IDを除外したfieldsを使用
 	if !isDM {
-		editEmbed := &discordgo.MessageEmbed{
-			Title:       "🟡 予約が編集されました",
-			Description: fmt.Sprintf("<@%s> さんが予約を編集しました", userID),
-			Fields:      fields,
-			Color:       0xFEE75C, // Discord Yellow
-			Timestamp:   time.Now().Format(time.RFC3339),
-			Footer: &discordgo.MessageEmbedFooter{
-				Text: "部室予約システム  |  edit",
-			},
-		}
-		s.ChannelMessageSendEmbed(allowedChannelID, editEmbed)
+		sendChannelEmbed(s, allowedChannelID, "🟡 予約が編集されました", fmt.Sprintf("<@%s> さんが予約を編集しました", userID), fields[1:], 0xFEE75C, "部室予約システム  |  edit")
 	} else if allowedChannelID != "" {
 		// DMから実行された場合も、指定チャンネルに通知
-		editEmbed := &discordgo.MessageEmbed{
-			Title:       "🟡 予約が編集されました",
-			Description: fmt.Sprintf("%s さんが予約を編集しました", username),
-			Fields:      fields,
-			Color:       0xFEE75C, // Discord Yellow
-			Timestamp:   time.Now().Format(time.RFC3339),
-			Footer: &discordgo.MessageEmbedFooter{
-				Text: "部室予約システム  |  edit",
-			},
-		}
-		s.ChannelMessageSendEmbed(allowedChannelID, editEmbed)
+		sendChannelEmbed(s, allowedChannelID, "🟡 予約が編集されました", fmt.Sprintf("%s さんが予約を編集しました", username), fields[1:], 0xFEE75C, "部室予約システム  |  edit")
 	}
 
-	// Botステータスを更新
+	// 7. Botステータス更新
 	if UpdateStatusCallback != nil {
 		UpdateStatusCallback()
 	}
