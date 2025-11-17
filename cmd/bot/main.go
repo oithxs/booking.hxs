@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -216,6 +217,8 @@ func sendStartupNotification(s *discordgo.Session) {
 	if message == "" {
 		message = "Bot が再起動しました。\n部室予約システムが利用可能です。"
 	}
+	// \nを改行に変換
+	message = strings.ReplaceAll(message, "\\n", "\n")
 
 	// 3. 埋め込みメッセージ作成
 	embed := &discordgo.MessageEmbed{
