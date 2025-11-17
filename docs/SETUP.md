@@ -166,6 +166,12 @@ ALLOWED_CHANNEL_ID=your_allowed_channel_id_here
 
 # Feedback Channel ID（オプション）
 FEEDBACK_CHANNEL_ID=your_feedback_channel_id_here
+
+# Startup Notification Channel ID（オプション）
+STARTUP_NOTIFICATION_CHANNEL_ID=
+
+# Startup Notification Message（オプション）
+STARTUP_NOTIFICATION_MESSAGE=
 ```
 
 ### 各項目の説明
@@ -176,6 +182,8 @@ FEEDBACK_CHANNEL_ID=your_feedback_channel_id_here
 | `GUILD_ID` | テスト用サーバーのID。設定するとそのサーバー専用コマンドとして即座に登録される。空欄ならグローバルコマンド（反映に最大1時間） | 推奨 |
 | `ALLOWED_CHANNEL_ID` | コマンドを受け付けるチャンネルのID。設定すると、そのチャンネルとDMでのみコマンドが動作します。DMから実行された場合、公開メッセージはこのチャンネルに送信されます。 | 推奨 |
 | `FEEDBACK_CHANNEL_ID` | `/feedback` コマンドで送信されたフィードバックを受け取るチャンネルのID。設定しない場合、`/feedback` コマンドは使用不可 | オプション |
+| `STARTUP_NOTIFICATION_CHANNEL_ID` | Bot起動時に通知メッセージを送信するチャンネルのID。空欄で無効化（systemdでの自動再起動時に便利） | オプション |
+| `STARTUP_NOTIFICATION_MESSAGE` | Bot起動時のカスタムメッセージ。空欄の場合はデフォルトメッセージ「🚀 Bot が起動しました。部室予約システムが利用可能です。」が使用される | オプション |
 
 
 

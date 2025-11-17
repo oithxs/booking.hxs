@@ -69,7 +69,7 @@ booking.hxs/
 ./setup.sh
 
 # 環境変数を設定
-vi .env  # DISCORD_TOKEN, GUILD_ID, FEEDBACK_CHANNEL_ID を設定
+vi .env  # DISCORD_TOKEN, GUILD_ID, FEEDBACK_CHANNEL_ID, STARTUP_NOTIFICATION_CHANNEL_ID を設定
 
 # 起動
 make run

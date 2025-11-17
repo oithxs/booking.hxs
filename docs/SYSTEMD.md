@@ -158,8 +158,18 @@ sudo nano /etc/systemd/system/booking-hxs.service
 Environment="DISCORD_TOKEN=MTIzNDU2Nzg5MDEyMzQ1Njc4OQ.GaBcDe.FgHiJkLmNoPqRsTuVwXyZ"
 Environment="GUILD_ID=987654321098765432"
 Environment="FEEDBACK_CHANNEL_ID=111222333444555666"
+Environment="STARTUP_NOTIFICATION_CHANNEL_ID=111222333444555666"
+Environment="STARTUP_NOTIFICATION_MESSAGE=🚀 Bot が再起動しました。"
 Environment="ENV=production"
 ```
+
+**環境変数の説明**:
+- `DISCORD_TOKEN`: Discord Botトークン（必須）
+- `GUILD_ID`: サーバーID（必須）
+- `FEEDBACK_CHANNEL_ID`: フィードバック送信先チャンネルID（必須）
+- `STARTUP_NOTIFICATION_CHANNEL_ID`: 起動通知送信先チャンネルID（オプション、空欄で無効化）
+- `STARTUP_NOTIFICATION_MESSAGE`: 起動時のカスタムメッセージ（オプション、空欄でデフォルトメッセージ）
+- `ENV`: 環境設定（`production` または `development`）
 
 変更後、設定を再読み込み：
 

@@ -11,17 +11,18 @@
 5. [開発ワークフロー](#開発ワークフロー)
 6. [ホットリロード](#ホットリロード)
 7. [コードの品質管理](#コードの品質管理)
-8. [プロジェクト構造](#プロジェクト構造)
-9. [カスタマイズ](#カスタマイズ)
-10. [デバッグ](#デバッグ)
-11. [テスト](#テスト)
-12. [Git管理](#git管理)
-13. [セキュリティのベストプラクティス](#-セキュリティのベストプラクティス)
-14. [デプロイメント](#-デプロイメント)
-15. [開発ワークフロー例](#-開発ワークフロー例)
-16. [トラブルシューティング](#-トラブルシューティング)
-17. [参考資料](#-参考資料)
-18. [まとめ](#-まとめ)
+8.[起動通知機能のカスタマイズ](#起動通知機能のカスタマイズ)
+9. [プロジェクト構造](#プロジェクト構造)
+10. [カスタマイズ](#カスタマイズ)
+11. [デバッグ](#デバッグ)
+12. [テスト](#テスト)
+13. [Git管理](#git管理)
+14. [セキュリティのベストプラクティス](#-セキュリティのベストプラクティス)
+15. [デプロイメント](#-デプロイメント)
+16. [開発ワークフロー例](#-開発ワークフロー例)
+17. [トラブルシューティング](#-トラブルシューティング)
+18. [参考資料](#-参考資料)
+19. [まとめ](#-まとめ)
 
 ## 🆕 UI/UX仕様・開発ルール（2025年11月更新）
 
@@ -68,7 +69,7 @@
 - `handlers.go`はルーティングのみを担当
 - 共通処理は`response_helpers.go`に集約
 
----
+
 
 ## Go Modulesによる依存関係管理
 
@@ -88,7 +89,7 @@
 ✅ **簡単なセットアップ** - 1コマンドで完了
 ✅ **自動化** - Makefileで一貫したワークフロー
 
----
+
 
 ## 環境の切り替え
 
@@ -140,7 +141,6 @@ ENV=production
 
 **注**: `DATA_FILE` 環境変数は使用されません。データは常に `data/reservations.json` に保存されます。
 
----
 
 ## 依存関係の管理
 
@@ -193,7 +193,7 @@ go list -m all
 go mod graph
 ```
 
----
+
 
 ## 開発ワークフロー
 
@@ -232,7 +232,7 @@ make run
 make build
 ```
 
----
+
 
 ## ホットリロード
 
@@ -264,8 +264,6 @@ air
   include_ext = ["go", "tpl", "tmpl", "html"]
   exclude_dir = ["tmp", "vendor", "bin"]
 ```
-
----
 
 ## コードの品質管理
 
@@ -304,7 +302,27 @@ make test
 go test ./...
 ```
 
----
+## 起動通知機能のカスタマイズ
+
+### 概要
+
+v1.4.0で追加された起動通知機能により、Botの起動時にDiscordチャンネルへ自動通知を送信できます。systemd環境での運用時に特に有用です。
+
+#### カスタマイズ例
+
+**1. 環境別メッセージの設定**
+
+開発環境と本番環境で異なるメッセージを送信:
+
+```bash
+# .env.development
+STARTUP_NOTIFICATION_CHANNEL_ID=開発用チャンネルID
+STARTUP_NOTIFICATION_MESSAGE=🔧 開発環境のBotが起動しました。
+
+# .env.production
+STARTUP_NOTIFICATION_CHANNEL_ID=本番用チャンネルID
+STARTUP_NOTIFICATION_MESSAGE=🚀 本番環境のBotが再起動しました。システムは正常に稼働しています。
+```
 
 ## プロジェクト構造
 
@@ -511,13 +529,7 @@ type Reservation struct {
 }
 ```
 
----
 
-### ログフォーマットのカスタマイズ
-
-`internal/logging/logger.go` でログフォーマットを変更できます。
-
----
 
 ## デバッグ
 
@@ -540,7 +552,6 @@ tail -f logs/commands_2025-11.log | grep '"success":false'
 sudo journalctl -u booking-hxs -f
 ```
 
----
 
 ## テスト
 
@@ -567,8 +578,6 @@ go test ./...
 go test -cover ./...
 ```
 
----
-
 ## Git管理
 
 ### .gitignore
@@ -594,7 +603,6 @@ make build
 make test
 ```
 
----
 
 ## まとめ
 
@@ -610,184 +618,3 @@ make test
 ---
 
 **関連ドキュメント**: [README](../README.md) | [起動ガイド](SETUP.md) | [コマンド](COMMANDS.md) | [データ管理](DATA_MANAGEMENT.md) | [systemd](SYSTEMD.md)
-
-```bash
-# airをインストール
-go install github.com/cosmtrek/air@latest
-```
-
-### 使用方法
-```bash
-# ホットリロードで起動
-make dev
-
-# または直接
-air
-```
-
-設定は`.air.toml`で管理されています。
-
-## 🔒 セキュリティのベストプラクティス
-
-### 秘密情報の管理
-
-1. **絶対にコミットしない**
-   - `.env`ファイルは`.gitignore`に含める
-   - トークンやパスワードをコードに直接書かない
-
-2. **環境変数を使用**
-   ```go
-   token := os.Getenv("DISCORD_TOKEN")
-   ```
-
-3. **テンプレートを用意**
-   - `.env.example`で構造を共有
-   - 実際の値は含めない
-
-### Git管理
-
-```gitignore
-# 環境変数
-.env
-.env.backup
-.env.local
-
-# ビルド成果物
-bin/
-tmp/
-
-# データファイル
-*.json
-reservations*.json
-```
-
-## 🚀 デプロイメント
-
-### 本番環境へのデプロイ
-
-```bash
-# 1. 本番環境に切り替え
-./switch_env.sh production
-
-# 2. 依存関係を確認
-./manage_deps.sh verify
-
-# 3. ビルド
-make build
-
-# 4. 実行
-./bin/booking.hxs
-```
-
-### Dockerを使用する場合
-
-```dockerfile
-FROM golang:1.21-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
-RUN go build -o booking.hxs cmd/bot/main.go
-
-FROM alpine:latest
-WORKDIR /app
-COPY --from=builder /app/booking.hxs .
-COPY .env.production .env
-CMD ["./booking.hxs"]
-```
-
-## 💡 開発ワークフロー例
-
-### 新機能の開発
-
-```bash
-# 1. 開発環境に切り替え
-./switch_env.sh development
-
-# 2. ホットリロードで起動
-make dev
-
-# 3. コードを編集（自動で再起動される）
-
-# 4. コミット前のチェック
-make check
-
-# 5. ビルドテスト
-make build
-```
-
-### バグ修正
-
-```bash
-# 1. 問題の再現（開発環境）
-./switch_env.sh development
-make run
-
-# 2. 修正
-
-# 3. 検証
-make check
-make test
-
-# 4. 本番環境でテスト
-./switch_env.sh production
-make build
-./bin/booking.hxs
-```
-
-## 🆘 トラブルシューティング
-
-### 依存関係の問題
-
-```bash
-# 完全クリーンアップ
-make clean
-./manage_deps.sh clean
-
-# 再インストール
-./manage_deps.sh install
-```
-
-### ビルドエラー
-
-```bash
-# モジュールの整理
-go mod tidy
-
-# 検証
-go mod verify
-
-# フォーマットと静的解析
-make check
-```
-
-### 環境変数が読み込まれない
-
-```bash
-# 現在の環境を確認
-cat .env
-
-# 環境を再設定
-./switch_env.sh development
-```
-
-## 📚 参考資料
-
-- [Go Modules Reference](https://go.dev/ref/mod)
-- [Go環境変数](https://pkg.go.dev/os#Getenv)
-- [Makefile入門](https://www.gnu.org/software/make/manual/make.html)
-
-## 🎓 まとめ
-
-このプロジェクトでは、Goの標準的な依存関係管理システムと、便利なスクリプトを組み合わせて、Pythonの仮想環境のような使い心地を実現しています：
-
-| 機能 | Python venv | このプロジェクト |
-|------|-------------|-----------------|
-| プロジェクト分離 | `python -m venv` | `go.mod` |
-| 依存関係管理 | `pip install` | `go mod download` |
-| 依存関係一覧 | `requirements.txt` | `go.mod` + `go.sum` |
-| 環境活性化 | `source venv/bin/activate` | 不要（自動） |
-| 環境切り替え | 手動 | `./switch_env.sh` |
-| タスク実行 | `python script.py` | `make run` |
-
-Happy Coding! 🚀

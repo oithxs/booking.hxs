@@ -22,6 +22,29 @@
 
 ### Security
 
+---
+
+## [internal-update] - 2025-11-17
+
+### Added
+- **Bot起動通知機能**: systemdでの自動再起動時に通知を送信
+  - 新しい環境変数 `STARTUP_NOTIFICATION_CHANNEL_ID`: 通知先チャンネルID（オプション）
+  - 新しい環境変数 `STARTUP_NOTIFICATION_MESSAGE`: カスタム起動メッセージ（オプション）
+  - `sendStartupNotification()` 関数: 起動時に埋め込みメッセージを送信
+  - グローバル変数 `startupChannelID`, `startupMessage` を追加
+  - デフォルトメッセージ: "🚀 Bot が起動しました。部室予約システムが利用可能です。"
+  - エラーハンドリング: 送信失敗時はログに記録
+
+### Changed
+- **main()関数の処理順序**: コマンド登録後、バックグラウンドタスク開始前に起動通知を送信
+- **ドキュメント更新**:
+  - `config/.env.example`: 起動通知関連の環境変数を追加
+  - `docs/SETUP.md`: 環境変数一覧テーブルに起動通知の説明を追加
+  - `docs/SYSTEMD.md`: systemd環境変数設定例に起動通知を追加
+  - `README.md`: クイックスタートにsystemdコマンド例を追加
+
+---
+
 ## [internal-update] - 2025-11-17
 
 ### Changed
