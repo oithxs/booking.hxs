@@ -82,6 +82,17 @@ func HandleAutocomplete(s *discordgo.Session, i *discordgo.InteractionCreate, st
 	}
 }
 
+// getWeekdayJa は日本語の曜日を返す
+func getWeekdayJa(t time.Time) string {
+	weekdays := []string{"日", "月", "火", "水", "木", "金", "土"}
+	return weekdays[int(t.Weekday())]
+}
+
+// formatDateWithWeekday は日付を曜日付きでフォーマットする
+func formatDateWithWeekday(t time.Time) string {
+	return fmt.Sprintf("%s (%s)", t.Format("2006/01/02"), getWeekdayJa(t))
+}
+
 // getDateSuggestions は日付の候補を生成する
 func getDateSuggestions(input string) []*discordgo.ApplicationCommandOptionChoice {
 	now := time.Now()
@@ -90,24 +101,30 @@ func getDateSuggestions(input string) []*discordgo.ApplicationCommandOptionChoic
 
 	// 入力が空の場合
 	if input == "" {
+		today := nowJST
+		tomorrow := nowJST.AddDate(0, 0, 1)
+		dayAfterTomorrow := nowJST.AddDate(0, 0, 2)
+
 		suggestions := []*discordgo.ApplicationCommandOptionChoice{
-			{Name: "今日", Value: nowJST.Format("2006/01/02")},
-			{Name: "明日", Value: nowJST.AddDate(0, 0, 1).Format("2006/01/02")},
-			{Name: "明後日", Value: nowJST.AddDate(0, 0, 2).Format("2006/01/02")},
+			{Name: fmt.Sprintf("今日 %s (%s)", today.Format("2006/01/02"), getWeekdayJa(today)), Value: today.Format("2006/01/02")},
+			{Name: fmt.Sprintf("明日 %s (%s)", tomorrow.Format("2006/01/02"), getWeekdayJa(tomorrow)), Value: tomorrow.Format("2006/01/02")},
+			{Name: fmt.Sprintf("明後日 %s (%s)", dayAfterTomorrow.Format("2006/01/02"), getWeekdayJa(dayAfterTomorrow)), Value: dayAfterTomorrow.Format("2006/01/02")},
 		}
 
 		// 3日後から30日後まで
 		for i := 3; i <= 30; i++ {
 			if i%7 == 0 && i <= 28 {
 				week := i / 7
+				futureDate := nowJST.AddDate(0, 0, i)
 				suggestions = append(suggestions, &discordgo.ApplicationCommandOptionChoice{
-					Name:  fmt.Sprintf("%d週間後", week),
-					Value: nowJST.AddDate(0, 0, i).Format("2006/01/02"),
+					Name:  fmt.Sprintf("%d週間後 %s (%s)", week, futureDate.Format("2006/01/02"), getWeekdayJa(futureDate)),
+					Value: futureDate.Format("2006/01/02"),
 				})
 			} else {
+				futureDate := nowJST.AddDate(0, 0, i)
 				suggestions = append(suggestions, &discordgo.ApplicationCommandOptionChoice{
-					Name:  nowJST.AddDate(0, 0, i).Format("2006/01/02"),
-					Value: nowJST.AddDate(0, 0, i).Format("2006/01/02"),
+					Name:  formatDateWithWeekday(futureDate),
+					Value: futureDate.Format("2006/01/02"),
 				})
 			}
 		}
@@ -124,10 +141,10 @@ func getDateSuggestions(input string) []*discordgo.ApplicationCommandOptionChoic
 				daysInMonth := time.Date(targetYear, time.Month(monthNum+1), 0, 0, 0, 0, 0, jst).Day()
 
 				for day := 1; day <= daysInMonth && len(suggestions) < 25; day++ {
-					dateStr := fmt.Sprintf("%d/%02d/%02d", targetYear, monthNum, day)
+					dateTime := time.Date(targetYear, time.Month(monthNum), day, 0, 0, 0, 0, jst)
 					suggestions = append(suggestions, &discordgo.ApplicationCommandOptionChoice{
-						Name:  dateStr,
-						Value: dateStr,
+						Name:  formatDateWithWeekday(dateTime),
+						Value: dateTime.Format("2006/01/02"),
 					})
 				}
 			}
@@ -152,10 +169,10 @@ func getDateSuggestions(input string) []*discordgo.ApplicationCommandOptionChoic
 			suggestions := []*discordgo.ApplicationCommandOptionChoice{}
 			for month := 1; month <= 12 && len(suggestions) < 25; month++ {
 				for day := 1; day <= 7 && len(suggestions) < 25; day++ {
-					dateStr := fmt.Sprintf("%d/%02d/%02d", fullYear, month, day)
+					dateTime := time.Date(fullYear, time.Month(month), day, 0, 0, 0, 0, jst)
 					suggestions = append(suggestions, &discordgo.ApplicationCommandOptionChoice{
-						Name:  dateStr,
-						Value: dateStr,
+						Name:  formatDateWithWeekday(dateTime),
+						Value: dateTime.Format("2006/01/02"),
 					})
 				}
 			}
@@ -185,10 +202,10 @@ func getDateSuggestions(input string) []*discordgo.ApplicationCommandOptionChoic
 				daysInMonth := time.Date(targetYear, time.Month(targetMonth+1), 0, 0, 0, 0, 0, jst).Day()
 
 				if dayNum <= daysInMonth {
-					dateStr := fmt.Sprintf("%d/%02d/%02d", targetYear, targetMonth, dayNum)
+					dateTime := time.Date(targetYear, time.Month(targetMonth), dayNum, 0, 0, 0, 0, jst)
 					suggestions = append(suggestions, &discordgo.ApplicationCommandOptionChoice{
-						Name:  dateStr,
-						Value: dateStr,
+						Name:  formatDateWithWeekday(dateTime),
+						Value: dateTime.Format("2006/01/02"),
 					})
 				}
 			}
@@ -200,23 +217,29 @@ func getDateSuggestions(input string) []*discordgo.ApplicationCommandOptionChoic
 	}
 
 	// 通常のフィルタリング処理
+	today := nowJST
+	tomorrow := nowJST.AddDate(0, 0, 1)
+	dayAfterTomorrow := nowJST.AddDate(0, 0, 2)
+
 	allSuggestions := []*discordgo.ApplicationCommandOptionChoice{
-		{Name: "今日", Value: nowJST.Format("2006/01/02")},
-		{Name: "明日", Value: nowJST.AddDate(0, 0, 1).Format("2006/01/02")},
-		{Name: "明後日", Value: nowJST.AddDate(0, 0, 2).Format("2006/01/02")},
+		{Name: fmt.Sprintf("今日 %s (%s)", today.Format("2006/01/02"), getWeekdayJa(today)), Value: today.Format("2006/01/02")},
+		{Name: fmt.Sprintf("明日 %s (%s)", tomorrow.Format("2006/01/02"), getWeekdayJa(tomorrow)), Value: tomorrow.Format("2006/01/02")},
+		{Name: fmt.Sprintf("明後日 %s (%s)", dayAfterTomorrow.Format("2006/01/02"), getWeekdayJa(dayAfterTomorrow)), Value: dayAfterTomorrow.Format("2006/01/02")},
 	}
 
 	for i := 3; i <= 30; i++ {
 		if i%7 == 0 && i <= 28 {
 			week := i / 7
+			futureDate := nowJST.AddDate(0, 0, i)
 			allSuggestions = append(allSuggestions, &discordgo.ApplicationCommandOptionChoice{
-				Name:  fmt.Sprintf("%d週間後", week),
-				Value: nowJST.AddDate(0, 0, i).Format("2006/01/02"),
+				Name:  fmt.Sprintf("%d週間後 %s (%s)", week, futureDate.Format("2006/01/02"), getWeekdayJa(futureDate)),
+				Value: futureDate.Format("2006/01/02"),
 			})
 		} else {
+			futureDate := nowJST.AddDate(0, 0, i)
 			allSuggestions = append(allSuggestions, &discordgo.ApplicationCommandOptionChoice{
-				Name:  nowJST.AddDate(0, 0, i).Format("2006/01/02"),
-				Value: nowJST.AddDate(0, 0, i).Format("2006/01/02"),
+				Name:  formatDateWithWeekday(futureDate),
+				Value: futureDate.Format("2006/01/02"),
 			})
 		}
 	}

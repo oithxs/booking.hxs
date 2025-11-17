@@ -201,6 +201,7 @@ func waitForShutdown() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 }
+
 // 何かの意図があって送信したくないときには.envのSTARTUP_NOTIFICATION_CHANNEL_IDを空にしてください
 func sendStartupNotification(s *discordgo.Session) {
 	// 1. チャンネルID確認
