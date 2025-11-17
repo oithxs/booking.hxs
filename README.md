@@ -36,6 +36,7 @@ Go言語で作成されたDiscord Bot用の部室予約システムです。ス�
 |  | **[💻 コマンド開発テンプレート](docs/COMMAND_TEMPLATE.md)** | コマンドの追加をするためのテンプレート |
 | **変更履歴** | **[📝 リリースノート](docs/RELEASE_NOTES.md)** | 詳細なリリース情報 |
 |  | **[📋 CHANGELOG](docs/CHANGELOG.md)** | 開発者向けバージョン履歴 |
+| **AI駆動** | **[AI_CONTEXT](docs/AI_CONTEXT.md)** | AI駆動開発用コンテキスト |
 
 ## 📖 プロジェクト構造
 
