@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/dice/hxs_reservation_system/internal/models"
 )
 
 // respondError はエラーメッセージを送信する
@@ -58,14 +57,17 @@ func respondEmbed(s *discordgo.Session, i *discordgo.InteractionCreate, title st
 	})
 }
 
-// respondEmbedWithFields はフィールド付き埋め込みメッセージを送信する
-func respondEmbedWithFields(s *discordgo.Session, i *discordgo.InteractionCreate, title string, description string, fields []*discordgo.MessageEmbedField, color int, ephemeral bool) {
+// respondEmbedWithFooter は埋め込みメッセージをフッター付きで送信する
+func respondEmbedWithFooter(s *discordgo.Session, i *discordgo.InteractionCreate, title string, description string, fields []*discordgo.MessageEmbedField, color int, footerText string, ephemeral bool) {
 	embed := &discordgo.MessageEmbed{
 		Title:       title,
 		Description: description,
 		Fields:      fields,
 		Color:       color,
 		Timestamp:   time.Now().Format(time.RFC3339),
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: footerText,
+		},
 	}
 	var flags discordgo.MessageFlags
 	if ephemeral {
@@ -157,16 +159,44 @@ func formatDate(date string) string {
 	return fmt.Sprintf("%s/%s/%s", year, month, day)
 }
 
-// getStatusEmoji はステータスに対応する絵文字を返す
-func getStatusEmoji(status models.ReservationStatus) string {
-	switch status {
-	case models.StatusPending:
-		return "📅"
-	case models.StatusCompleted:
-		return "✅"
-	case models.StatusCancelled:
-		return "🚫"
-	default:
-		return "❓"
+// sendChannelEmbed はチャンネルに埋め込みメッセージを送信する
+func sendChannelEmbed(s *discordgo.Session, channelID string, title string, description string, fields []*discordgo.MessageEmbedField, color int, footerText string) error {
+	embed := &discordgo.MessageEmbed{
+		Title:       title,
+		Description: description,
+		Fields:      fields,
+		Color:       color,
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: footerText,
+		},
+	}
+	_, err := s.ChannelMessageSendEmbed(channelID, embed)
+	return err
+}
+
+// createReservationEmbed は予約情報の埋め込みメッセージを作成する
+func createReservationEmbed(title string, fields []*discordgo.MessageEmbedField, color int, footerText string) *discordgo.MessageEmbed {
+	return &discordgo.MessageEmbed{
+		Title:     title,
+		Fields:    fields,
+		Color:     color,
+		Timestamp: time.Now().Format(time.RFC3339),
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: footerText,
+		},
+	}
+}
+
+// createHeaderEmbed はヘッダー用の埋め込みメッセージを作成する
+func createHeaderEmbed(title string, description string, color int, footerText string) *discordgo.MessageEmbed {
+	return &discordgo.MessageEmbed{
+		Title:       title,
+		Description: description,
+		Color:       color,
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: footerText,
+		},
 	}
 }

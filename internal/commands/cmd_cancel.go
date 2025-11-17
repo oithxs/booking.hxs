@@ -12,12 +12,14 @@ import (
 
 // handleCancel は予約キャンセルコマンドを処理する
 func handleCancel(s *discordgo.Session, i *discordgo.InteractionCreate, store *storage.Storage, logger *logging.Logger, allowedChannelID string, isDM bool) {
+	// 1. オプション取得
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
 		optionMap[opt.Name] = opt
 	}
 
+	// 2. パラメータ抽出
 	reservationID := optionMap["reservation_id"].StringValue()
 
 	comment := ""
@@ -25,7 +27,7 @@ func handleCancel(s *discordgo.Session, i *discordgo.InteractionCreate, store *s
 		comment = opt.StringValue()
 	}
 
-	// 予約を取得
+	// 3. ビジネスロジック - 予約を取得
 	reservation, err := store.GetReservation(reservationID)
 	if err != nil {
 		respondError(s, i, "予約が見つかりませんでした。予約IDを確認してください。")
@@ -52,46 +54,38 @@ func handleCancel(s *discordgo.Session, i *discordgo.InteractionCreate, store *s
 		return
 	}
 
-	// 応答
+	// 4. レスポンス - 応答
 	respondEmbed(s, i, "🔴 予約を取り消しました", fmt.Sprintf("予約ID: `%s`", reservationID), 0xED4245, true)
 
-	// チャンネルの全員に通知
-	cancelEmbed := &discordgo.MessageEmbed{
-		Title: "🔴 予約が取り消されました",
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "👤 予約者",
-				Value:  fmt.Sprintf("<@%s>", reservation.UserID),
-				Inline: false,
-			},
-			{
-				Name:   "📅 日付",
-				Value:  formatDate(reservation.Date),
-				Inline: true,
-			},
-			{
-				Name:   "🕐 時間",
-				Value:  fmt.Sprintf("%s - %s", reservation.StartTime, reservation.EndTime),
-				Inline: true,
-			},
+	// 5. チャンネル通知
+	cancelFields := []*discordgo.MessageEmbedField{
+		{
+			Name:   "👤 予約者",
+			Value:  fmt.Sprintf("<@%s>", reservation.UserID),
+			Inline: false,
 		},
-		Color:     0xED4245, // Discord Red
-		Timestamp: time.Now().Format(time.RFC3339),
-		Footer: &discordgo.MessageEmbedFooter{
-			Text: "部室予約システム  |  cancel",
+		{
+			Name:   "📅 日付",
+			Value:  formatDate(reservation.Date),
+			Inline: true,
+		},
+		{
+			Name:   "🕐 時間",
+			Value:  fmt.Sprintf("%s - %s", reservation.StartTime, reservation.EndTime),
+			Inline: true,
 		},
 	}
 	if comment != "" {
-		cancelEmbed.Fields = append(cancelEmbed.Fields, &discordgo.MessageEmbedField{
+		cancelFields = append(cancelFields, &discordgo.MessageEmbedField{
 			Name:   "💬 コメント",
 			Value:  comment,
 			Inline: false,
 		})
 	}
 	// DMから実行された場合も、指定チャンネルに通知
-	s.ChannelMessageSendEmbed(allowedChannelID, cancelEmbed)
+	sendChannelEmbed(s, allowedChannelID, "🔴 予約が取り消されました", "", cancelFields, 0xED4245, "部室予約システム  |  cancel")
 
-	// Botステータスを更新
+	// 6. Botステータス更新
 	if UpdateStatusCallback != nil {
 		UpdateStatusCallback()
 	}

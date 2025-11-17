@@ -12,16 +12,17 @@ import (
 
 // handleReserve は予約作成コマンドを処理する
 func handleReserve(s *discordgo.Session, i *discordgo.InteractionCreate, store *storage.Storage, logger *logging.Logger, allowedChannelID string, isDM bool) {
+	// 1. オプション取得
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
 		optionMap[opt.Name] = opt
 	}
 
-	// ユーザー情報を取得
+	// 2. ユーザー情報取得
 	userID, username := getUserInfo(i, isDM)
 
-	// 必須パラメータを取得
+	// 3. パラメータ抽出 - 必須パラメータを取得
 	date := optionMap["date"].StringValue()
 	startTime := optionMap["start_time"].StringValue()
 
@@ -62,7 +63,7 @@ func handleReserve(s *discordgo.Session, i *discordgo.InteractionCreate, store *
 		parameters["comment"] = comment
 	}
 
-	// 日付と時間の形式を検証（YYYY-MM-DD または YYYY/MM/DD を許可）
+	// 4. ビジネスロジック - 日付と時間の形式を検証（YYYY-MM-DD または YYYY/MM/DD を許可）
 	var reservationDate time.Time
 	if parsedDate, err := time.Parse("2006-01-02", date); err != nil {
 		if t2, err2 := time.Parse("2006/01/02", date); err2 == nil {
@@ -191,21 +192,7 @@ func handleReserve(s *discordgo.Session, i *discordgo.InteractionCreate, store *
 			},
 		}
 
-		embed := &discordgo.MessageEmbed{
-			Title:       "🔴 予約できませんでした",
-			Description: "指定された時間は既に予約されています。",
-			Fields:      fields,
-			Color:       0xED4245, // Discord Red
-			Timestamp:   time.Now().Format(time.RFC3339),
-		}
-
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Embeds: []*discordgo.MessageEmbed{embed},
-				Flags:  discordgo.MessageFlagsEphemeral,
-			},
-		})
+		respondEmbedWithFooter(s, i, "🔴 予約できませんでした", "指定された時間は既に予約されています。", fields, 0xED4245, "部室予約システム  |  reserve", true)
 		return
 	}
 
@@ -228,7 +215,7 @@ func handleReserve(s *discordgo.Session, i *discordgo.InteractionCreate, store *
 		return
 	}
 
-	// 予約者にはIDを含めたメッセージを送信（Ephemeral）
+	// 5. レスポンス - 予約者にはIDを含めたメッセージを送信（Ephemeral）
 	fields := []*discordgo.MessageEmbedField{
 		{
 			Name:   "予約ID",
@@ -254,62 +241,21 @@ func handleReserve(s *discordgo.Session, i *discordgo.InteractionCreate, store *
 		})
 	}
 
-	embed := &discordgo.MessageEmbed{
-		Title:       "🟢 予約が完了しました！",
-		Description: "",
-		Fields:      fields,
-		Color:       0x57F287, // Discord Green
-		Timestamp:   time.Now().Format(time.RFC3339),
-		Footer: &discordgo.MessageEmbedFooter{
-			Text: "部室予約システム  |  reserve",
-		},
-	}
+	respondEmbedWithFooter(s, i, "🟢 予約が完了しました！", "", fields, 0x57F287, "部室予約システム  |  reserve", true)
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Embeds: []*discordgo.MessageEmbed{embed},
-			Flags:  discordgo.MessageFlagsEphemeral,
-		},
-	})
-
-	// チャンネルの全員に予約情報を通知（予約IDは含めない）
-	publicEmbed := &discordgo.MessageEmbed{
-		Title: "🟢 新しい予約が追加されました",
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "👤 予約者",
-				Value:  fmt.Sprintf("<@%s>", reservation.UserID),
-				Inline: false,
-			},
-			{
-				Name:   "📅 日付",
-				Value:  formatDate(reservation.Date),
-				Inline: true,
-			},
-			{
-				Name:   "🕐 時間",
-				Value:  fmt.Sprintf("%s - %s", reservation.StartTime, reservation.EndTime),
-				Inline: true,
-			},
-		},
-		Color:     0x57F287, // Discord Green
-		Timestamp: time.Now().Format(time.RFC3339),
-		Footer: &discordgo.MessageEmbedFooter{
-			Text: "部室予約システム  |  reserve",
-		},
-	}
-	if comment != "" {
-		publicEmbed.Fields = append(publicEmbed.Fields, &discordgo.MessageEmbedField{
-			Name:   "💬 コメント",
-			Value:  comment,
+	// 6. チャンネル通知 - 予約IDを除外し、予約者フィールドを追加
+	publicFields := []*discordgo.MessageEmbedField{
+		{
+			Name:   "👤 予約者",
+			Value:  fmt.Sprintf("<@%s>", reservation.UserID),
 			Inline: false,
-		})
+		},
 	}
+	publicFields = append(publicFields, fields[1:]...) // 予約ID以降のフィールドを追加
 	// DMから実行された場合も、指定チャンネルに通知
-	s.ChannelMessageSendEmbed(allowedChannelID, publicEmbed)
+	sendChannelEmbed(s, allowedChannelID, "🟢 新しい予約が追加されました", "", publicFields, 0x57F287, "部室予約システム  |  reserve")
 
-	// Botステータスを更新
+	// 7. Botステータス更新
 	if UpdateStatusCallback != nil {
 		UpdateStatusCallback()
 	}

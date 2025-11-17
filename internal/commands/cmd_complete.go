@@ -12,12 +12,14 @@ import (
 
 // handleComplete は予約完了コマンドを処理する
 func handleComplete(s *discordgo.Session, i *discordgo.InteractionCreate, store *storage.Storage, logger *logging.Logger, allowedChannelID string, isDM bool) {
+	// 1. オプション取得
 	options := i.ApplicationCommandData().Options
 	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
 	for _, opt := range options {
 		optionMap[opt.Name] = opt
 	}
 
+	// 2. パラメータ抽出
 	reservationID := optionMap["reservation_id"].StringValue()
 
 	comment := ""
@@ -25,7 +27,7 @@ func handleComplete(s *discordgo.Session, i *discordgo.InteractionCreate, store 
 		comment = opt.StringValue()
 	}
 
-	// 予約を取得
+	// 3. ビジネスロジック - 予約を取得
 	reservation, err := store.GetReservation(reservationID)
 	if err != nil {
 		respondError(s, i, "予約が見つかりませんでした。予約IDを確認してください。")
@@ -52,46 +54,38 @@ func handleComplete(s *discordgo.Session, i *discordgo.InteractionCreate, store 
 		return
 	}
 
-	// 応答
+	// 4. レスポンス - 応答
 	respondEmbed(s, i, "🔵 予約を完了にしました", fmt.Sprintf("予約ID: `%s`", reservationID), 0x5865F2, true)
 
-	// チャンネルの全員に通知
-	completeEmbed := &discordgo.MessageEmbed{
-		Title: "🔵 予約が終わりました",
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "👤 予約者",
-				Value:  fmt.Sprintf("<@%s>", reservation.UserID),
-				Inline: false,
-			},
-			{
-				Name:   "📅 日付",
-				Value:  formatDate(reservation.Date),
-				Inline: true,
-			},
-			{
-				Name:   "🕐 時間",
-				Value:  fmt.Sprintf("%s - %s", reservation.StartTime, reservation.EndTime),
-				Inline: true,
-			},
+	// 5. チャンネル通知
+	completeFields := []*discordgo.MessageEmbedField{
+		{
+			Name:   "👤 予約者",
+			Value:  fmt.Sprintf("<@%s>", reservation.UserID),
+			Inline: false,
 		},
-		Color:     0x5865F2, // Discord Blue
-		Timestamp: time.Now().Format(time.RFC3339),
-		Footer: &discordgo.MessageEmbedFooter{
-			Text: "部室予約システム  |  complete",
+		{
+			Name:   "📅 日付",
+			Value:  formatDate(reservation.Date),
+			Inline: true,
+		},
+		{
+			Name:   "🕐 時間",
+			Value:  fmt.Sprintf("%s - %s", reservation.StartTime, reservation.EndTime),
+			Inline: true,
 		},
 	}
 	if comment != "" {
-		completeEmbed.Fields = append(completeEmbed.Fields, &discordgo.MessageEmbedField{
+		completeFields = append(completeFields, &discordgo.MessageEmbedField{
 			Name:   "💬 コメント",
 			Value:  comment,
 			Inline: false,
 		})
 	}
 	// DMから実行された場合も、指定チャンネルに通知
-	s.ChannelMessageSendEmbed(allowedChannelID, completeEmbed)
+	sendChannelEmbed(s, allowedChannelID, "🔵 予約が終わりました", "", completeFields, 0x5865F2, "部室予約システム  |  complete")
 
-	// Botステータスを更新
+	// 6. Botステータス更新
 	if UpdateStatusCallback != nil {
 		UpdateStatusCallback()
 	}

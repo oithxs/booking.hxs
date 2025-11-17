@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"sort"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dice/hxs_reservation_system/internal/logging"
@@ -13,8 +12,10 @@ import (
 
 // handleList はすべての予約一覧を表示する
 func handleList(s *discordgo.Session, i *discordgo.InteractionCreate, store *storage.Storage, logger *logging.Logger, isDM bool) {
+	// 1. データ取得 - すべての予約を取得
 	allReservations := store.GetAllReservations()
-	// 完了・キャンセル済みを除外
+
+	// 2. データ処理 - 完了・キャンセル済みを除外
 	reservations := make([]*models.Reservation, 0)
 	for _, r := range allReservations {
 		if r.Status != models.StatusCompleted && r.Status != models.StatusCancelled {
@@ -22,12 +23,13 @@ func handleList(s *discordgo.Session, i *discordgo.InteractionCreate, store *sto
 		}
 	}
 
+	// 3. レスポンス - 予約がない場合
 	if len(reservations) == 0 {
 		respondEmbed(s, i, "⚫ 予約一覧", "現在、予約はありません。", 0x000000, true)
 		return
 	}
 
-	// 日時でソート
+	// 4. データ処理 - 日時でソート
 	sort.Slice(reservations, func(a, b int) bool {
 		tA, errA := reservations[a].GetStartDateTime()
 		tB, errB := reservations[b].GetStartDateTime()
@@ -37,20 +39,12 @@ func handleList(s *discordgo.Session, i *discordgo.InteractionCreate, store *sto
 		return tA.Before(tB)
 	})
 
-	// 最初のメッセージ（ヘッダー + 最初の予約9件）
+	// 5. レスポンス - 最初のメッセージ（ヘッダー + 最初の予約9件）
 	embeds := []*discordgo.MessageEmbed{}
 
 	// ヘッダー
 	headerDescription := fmt.Sprintf("現在 %d 件の予約があります", len(reservations))
-	headerEmbed := &discordgo.MessageEmbed{
-		Title:       "⚫ すべての予約一覧",
-		Description: headerDescription,
-		Color:       0x000000,
-		Timestamp:   time.Now().Format(time.RFC3339),
-		Footer: &discordgo.MessageEmbedFooter{
-			Text: "部室予約システム  |  list",
-		},
-	}
+	headerEmbed := createHeaderEmbed("⚫ すべての予約一覧", headerDescription, 0x000000, "部室予約システム  |  list")
 	embeds = append(embeds, headerEmbed)
 
 	// 最初の9件を表示
@@ -84,15 +78,12 @@ func handleList(s *discordgo.Session, i *discordgo.InteractionCreate, store *sto
 			})
 		}
 
-		reservationEmbed := &discordgo.MessageEmbed{
-			Title:     fmt.Sprintf("No.%d", idx+1),
-			Fields:    fields,
-			Color:     0x000000,
-			Timestamp: time.Now().Format(time.RFC3339),
-			Footer: &discordgo.MessageEmbedFooter{
-				Text: fmt.Sprintf("部室予約システム  |  list  |  予約 %d/%d", idx+1, len(reservations)),
-			},
-		}
+		reservationEmbed := createReservationEmbed(
+			fmt.Sprintf("No.%d", idx+1),
+			fields,
+			0x000000,
+			fmt.Sprintf("部室予約システム  |  list  |  予約 %d/%d", idx+1, len(reservations)),
+		)
 		embeds = append(embeds, reservationEmbed)
 	}
 
@@ -145,15 +136,12 @@ func handleList(s *discordgo.Session, i *discordgo.InteractionCreate, store *sto
 					})
 				}
 
-				reservationEmbed := &discordgo.MessageEmbed{
-					Title:     fmt.Sprintf("No.%d", idx+1),
-					Fields:    fields,
-					Color:     0x000000,
-					Timestamp: time.Now().Format(time.RFC3339),
-					Footer: &discordgo.MessageEmbedFooter{
-						Text: fmt.Sprintf("部室予約システム  |  list  |  予約 %d/%d", idx+1, len(reservations)),
-					},
-				}
+				reservationEmbed := createReservationEmbed(
+					fmt.Sprintf("No.%d", idx+1),
+					fields,
+					0x000000,
+					fmt.Sprintf("部室予約システム  |  list  |  予約 %d/%d", idx+1, len(reservations)),
+				)
 				messageEmbeds = append(messageEmbeds, reservationEmbed)
 			}
 
