@@ -33,9 +33,9 @@ Go言語で作成されたDiscord Bot用の部室予約システムです。ス�
 | **運用** | **[🗄️ データ管理](docs/DATA_MANAGEMENT.md)** | データ保存とクリーンアップ |
 | | **[⚙️ systemdセットアップ](docs/SYSTEMD.md)** | サーバーでの自動起動 |
 | **開発** | **[💻 開発者ガイド](docs/DEVELOPMENT.md)** | 開発環境と拡張方法 |
-| **変更履歴** | **[📋 CHANGELOG](docs/CHANGELOG.md)** | バージョン履歴（概要） |
-| | **[📝 リリースノート](docs/RELEASE_NOTES.md)** | 詳細なリリース情報 |
-
+|  | **[💻 コマンド開発テンプレート](docs/COMMAND_TEMPLATE.md)** | コマンドの追加をするためのテンプレート |
+| **変更履歴** | **[📝 リリースノート](docs/RELEASE_NOTES.md)** | 詳細なリリース情報 |
+|  | **[📋 CHANGELOG](docs/CHANGELOG.md)** | 開発者向けバージョン履歴 |
 
 ## 📖 プロジェクト構造
 
