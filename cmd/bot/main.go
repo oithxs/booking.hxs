@@ -31,6 +31,8 @@ var (
 	logger                *logging.Logger
 	guildID               string
 	allowedChannelID      string
+	startupChannelID      string
+	startupMessage        string
 	processedInteractions sync.Map
 )
 
@@ -41,6 +43,8 @@ func init() {
 
 	guildID = os.Getenv("GUILD_ID")
 	allowedChannelID = os.Getenv("ALLOWED_CHANNEL_ID")
+	startupChannelID = os.Getenv("STARTUP_NOTIFICATION_CHANNEL_ID")
+	startupMessage = os.Getenv("STARTUP_NOTIFICATION_MESSAGE")
 }
 
 func main() {
@@ -73,6 +77,7 @@ func main() {
 		log.Fatalf("Failed to register commands: %v", err)
 	}
 
+	sendStartupNotification(dg)
 	startBackgroundTasks(dg)
 	waitForShutdown()
 	shutdown()
@@ -195,6 +200,43 @@ func waitForShutdown() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
+}
+// 何かの意図があって送信したくないときには.envのSTARTUP_NOTIFICATION_CHANNEL_IDを空にしてください
+func sendStartupNotification(s *discordgo.Session) {
+	// 1. チャンネルID確認
+	if startupChannelID == "" {
+		log.Println("Startup notification disabled (STARTUP_NOTIFICATION_CHANNEL_ID not set)")
+		log.Println("※注意：.envのメッセージを削除してください")
+		return
+	}
+
+	// 2. メッセージ準備
+	message := startupMessage
+	if message == "" {
+		message = "Bot が再起動しました。\n部室予約システムが利用可能です。"
+	}
+
+	// 3. 埋め込みメッセージ作成
+	embed := &discordgo.MessageEmbed{
+		Title:       "システムメッセージ",
+		Description: message,
+		Color:       0x00ff00, // 緑色
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: "部室予約システム | システムメッセージ",
+		},
+	}
+
+	// 4. メッセージ送信
+	_, err := s.ChannelMessageSendEmbed(startupChannelID, embed)
+	if err != nil {
+		log.Printf("❌ Failed to send startup notification: %v", err)
+		logger.LogError("ERROR", "sendStartupNotification", "Failed to send startup notification", err, map[string]interface{}{
+			"channel_id": startupChannelID,
+		})
+	} else {
+		log.Printf("✅ Startup notification sent to channel: %s", startupChannelID)
+	}
 }
 
 func shutdown() {
