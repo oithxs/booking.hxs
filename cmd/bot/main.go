@@ -208,7 +208,6 @@ func sendStartupNotification(s *discordgo.Session) {
 	// 1. チャンネルID確認
 	if startupChannelID == "" {
 		log.Println("Startup notification disabled (STARTUP_NOTIFICATION_CHANNEL_ID not set)")
-		log.Println("※注意：.envのメッセージを削除してください")
 		return
 	}
 
@@ -241,6 +240,7 @@ func sendStartupNotification(s *discordgo.Session) {
 	} else {
 		log.Printf("✅ Startup notification sent to channel: %s", startupChannelID)
 	}
+	log.Println("※注意：.envのメッセージを削除してください")
 }
 
 func shutdown() {
